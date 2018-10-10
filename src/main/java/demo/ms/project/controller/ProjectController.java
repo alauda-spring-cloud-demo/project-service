@@ -2,15 +2,19 @@ package demo.ms.project.controller;
 
 import com.google.common.collect.Lists;
 import demo.ms.common.entity.Card;
+import demo.ms.common.entity.Message;
 import demo.ms.common.entity.Project;
+import demo.ms.common.stream.LoggerEventSink;
 import demo.ms.common.vo.JwtUserInfo;
 import demo.ms.project.repository.ProjectRepository;
 import org.apache.commons.lang.StringUtils;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.cloud.stream.annotation.EnableBinding;
 import org.springframework.data.domain.Example;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.support.MessageBuilder;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -26,6 +30,7 @@ import java.util.stream.Collectors;
 
 @RequestMapping("/project")
 @RestController
+@EnableBinding(LoggerEventSink.class)
 public class ProjectController {
 
 //    @Autowired
@@ -37,12 +42,15 @@ public class ProjectController {
     @Autowired
     private RestTemplate restTemplate;
 
+    @Autowired
+    LoggerEventSink loggerEventSink;
+
     @PreAuthorize("hasAnyRole('ROLE_PMO','ROLE_ADMIN')")
     @Transactional
     @PostMapping
     public Project create(@RequestBody Project project) throws Exception {
 
-//        JwtUserInfo jwtUserInfo = (JwtUserInfo)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        JwtUserInfo jwtUserInfo = (JwtUserInfo)SecurityContextHolder.getContext().getAuthentication().getPrincipal();
 
         Project queryProject = new Project();
         queryProject.setName(project.getName());
@@ -63,14 +71,14 @@ public class ProjectController {
 
         restTemplate.postForObject("http://TODO-SERVICE/cards/batch",cardList,Card[].class);
 
-//        Message msg = new Message(
-//                null,
-//                null,
-//                Long.valueOf(project.getId()),
-//                "PROJECT",
-//                String.format("[%s]创建了项目[%s]",jwtUserInfo.getLoginName(),project.getName()),new Date(System
-//                .currentTimeMillis()));
-//        loggerEventSink.output().send(MessageBuilder.withPayload(msg).build());
+        Message msg = new Message(
+                null,
+                null,
+                Long.valueOf(project.getId()),
+                "PROJECT",
+                String.format("[%s]创建了项目[%s]",jwtUserInfo.getLoginName(),project.getName()),new Date(System
+                .currentTimeMillis()));
+        loggerEventSink.output().send(MessageBuilder.withPayload(msg).build());
         return project;
     }
 
@@ -92,6 +100,10 @@ public class ProjectController {
             oldProject.setOwnerName(project.getOwnerName());
         }
 
+        if(StringUtils.isNotEmpty(project.getOwnerDisplayName())){
+            oldProject.setOwnerDisplayName(project.getOwnerDisplayName());
+        }
+
         if(project.getOwnerId()!=null){
             oldProject.setOwnerId(project.getOwnerId());
         }
@@ -101,7 +113,7 @@ public class ProjectController {
     }
 
     @GetMapping("/{id:\\d+}")
-    public ResponseEntity get(@PathVariable Integer id){
+    public ResponseEntity get(@PathVariable Long id){
         if(!projectRepository.exists(id)){
             return new ResponseEntity(HttpStatus.NOT_FOUND);
         }
@@ -110,7 +122,7 @@ public class ProjectController {
 
     @PreAuthorize("hasAnyRole('ROLE_PMO','ROLE_ADMIN')")
     @DeleteMapping("/{id:\\d+}")
-    public ResponseEntity delete(@PathVariable Integer id){
+    public ResponseEntity delete(Long id){
         if(!projectRepository.exists(id)){
             return new ResponseEntity(HttpStatus.NOT_FOUND);
         }
@@ -135,9 +147,9 @@ public class ProjectController {
             return new ResponseEntity(projects,HttpStatus.OK);
         }
 
-        Integer ids[] = restTemplate.getForEntity("http://USER-SERVICE/user_project_ref?userId=" +
+        Long ids[] = restTemplate.getForEntity("http://USER-SERVICE/user_project_ref?userId=" +
                 jwtUserInfo
-                        .getUserId(),Integer[].class).getBody();
+                        .getUserId(),Long[].class).getBody();
 
         List<Project> projects = projectRepository.findByIdIn(Lists.newArrayList(ids));
         return new ResponseEntity(projects,HttpStatus.OK);
