@@ -9,6 +9,11 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class DummyController {
 
+    @GetMapping("limit")
+    public String limit(){
+        return "OK";
+    }
+
     @HystrixCommand(commandKey = "DummyNumber",threadPoolKey = "DummyNumberPool")
     @GetMapping("/number")
     public int number(int a,int b){
@@ -22,7 +27,7 @@ public class DummyController {
         return "OK";
     }
 
-    @HystrixCommand(commandKey = "DummyHello",,threadPoolKey = "DummyHelloPool",fallbackMethod = "helloFallback")
+    @HystrixCommand(commandKey = "DummyHello",threadPoolKey = "DummyHelloPool",fallbackMethod = "helloFallback")
     @GetMapping("/hello")
     public String hello(String name){
         return "你好:" + name;
