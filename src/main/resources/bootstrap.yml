@@ -29,6 +29,11 @@ eureka:
 logging:
   level:
     org.springframework.security: debug
+security:
+  user:
+    name: admin
+    password: admin
+    role: ACTUATOR
 ---
 spring:
   profiles: default

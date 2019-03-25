@@ -1,6 +1,7 @@
 package demo.ms.project.controller;
 
 import com.google.common.collect.Lists;
+import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import demo.ms.common.entity.Card;
 import demo.ms.common.entity.Message;
 import demo.ms.common.entity.Project;
@@ -45,6 +46,7 @@ public class ProjectController {
     @Autowired
     LoggerEventSink loggerEventSink;
 
+    @HystrixCommand(commandKey = "CreateProject")
     @PreAuthorize("hasAnyRole('ROLE_PMO','ROLE_ADMIN')")
     @Transactional
     @PostMapping
@@ -82,6 +84,7 @@ public class ProjectController {
         return project;
     }
 
+    @HystrixCommand(commandKey = "UpdateProject")
     @PreAuthorize("hasAnyRole('ROLE_PMO','ROLE_ADMIN')")
     @PutMapping
     public ResponseEntity update(@RequestBody Project project){
@@ -112,6 +115,7 @@ public class ProjectController {
         return new ResponseEntity(oldProject,HttpStatus.OK);
     }
 
+    @HystrixCommand(commandKey = "GetProject")
     @GetMapping("/{id:\\d+}")
     public ResponseEntity get(@PathVariable Long id){
         if(!projectRepository.exists(id)){
@@ -120,6 +124,7 @@ public class ProjectController {
         return new ResponseEntity(projectRepository.findOne(id),HttpStatus.OK);
     }
 
+    @HystrixCommand(commandKey = "DeleteProject")
     @PreAuthorize("hasAnyRole('ROLE_PMO','ROLE_ADMIN')")
     @DeleteMapping("/{id:\\d+}")
     public ResponseEntity delete(Long id){
@@ -130,6 +135,7 @@ public class ProjectController {
         return new ResponseEntity(HttpStatus.OK);
     }
 
+    @HystrixCommand(commandKey = "ListProject")
     @GetMapping
     public ResponseEntity list(){
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
