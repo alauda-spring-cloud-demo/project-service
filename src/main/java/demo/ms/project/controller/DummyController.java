@@ -30,7 +30,7 @@ public class DummyController {
     @HystrixCommand(commandKey = "DummyHello",threadPoolKey = "DummyHelloPool",fallbackMethod = "helloFallback")
     @GetMapping("/hello")
     public String hello(String name){
-        return "你好:" + name;
+        return "你好:" + name.toString();
     }
 
     public String helloFallback(String name){
